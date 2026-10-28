@@ -1,5 +1,6 @@
 import { Database } from "bun:sqlite";
-import { join } from "node:path";
+import { mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 import type { StoredRun } from "../core/types.ts";
 
 const DEFAULT_DB_PATH = join(process.cwd(), "data", "rodaddybench.db");
@@ -59,6 +60,7 @@ CREATE INDEX IF NOT EXISTS idx_summaries_run ON summaries(run_id);
  * Creates the schema if it doesn't exist.
  */
 export function initDb(dbPath: string = DEFAULT_DB_PATH): Database {
+  mkdirSync(dirname(dbPath), { recursive: true });
   const db = new Database(dbPath, { create: true });
 
   // Enable WAL mode for better concurrency
