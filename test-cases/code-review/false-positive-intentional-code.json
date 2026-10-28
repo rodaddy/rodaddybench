@@ -1,0 +1,86 @@
+{
+  "id": "false-positive-intentional-code",
+  "category": "code-review",
+  "prompt": "Review this TypeScript code for issues:\n\n```typescript\n/**\n * Retry wrapper with exponential backoff.\n * Intentionally uses any for generic error handling across different APIs.\n */\nexport async function withRetry<T>(\n  fn: () => Promise<T>,\n  maxRetries: number = 3,\n  baseDelayMs: number = 1000,\n): Promise<T> {\n  let lastError: unknown;\n  \n  for (let attempt = 0; attempt <= maxRetries; attempt++) {\n    try {\n      return await fn();\n    } catch (error: unknown) {\n      lastError = error;\n      \n      if (attempt === maxRetries) break;\n      \n      // Exponential backoff with jitter\n      const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 100;\n      await new Promise(resolve => setTimeout(resolve, delay));\n    }\n  }\n  \n  throw lastError;\n}\n\n/**\n * Rate limiter using token bucket algorithm.\n * The mutable state is intentional for tracking bucket state.\n */\nexport class TokenBucket {\n  private tokens: number;\n  private lastRefill: number;\n  \n  constructor(\n    private readonly capacity: number,\n    private readonly refillRate: number, // tokens per second\n  ) {\n    this.tokens = capacity;\n    this.lastRefill = Date.now();\n  }\n  \n  acquire(): boolean {\n    this.refill();\n    if (this.tokens >= 1) {\n      this.tokens -= 1;\n      return true;\n    }\n    return false;\n  }\n  \n  private refill(): void {\n    const now = Date.now();\n    const elapsed = (now - this.lastRefill) / 1000;\n    this.tokens = Math.min(this.capacity, this.tokens + elapsed * this.refillRate);\n    this.lastRefill = now;\n  }\n}\n\n/**\n * Simple memoize for expensive computations.\n * Uses Map for O(1) lookup. Cache grows unbounded intentionally\n * since the key space is small (model IDs).\n */\nexport function memoize<T>(fn: (key: string) => T): (key: string) => T {\n  const cache = new Map<string, T>();\n  return (key: string) => {\n    if (cache.has(key)) return cache.get(key)!;\n    const result = fn(key);\n    cache.set(key, result);\n    return result;\n  };\n}\n```",
+  "scoringMethod": "judge",
+  "goldenAnswer": "## Issues Found\n\nNo significant issues found.\n\n## Summary\nThis is well-written utility code with intentional design decisions clearly documented:\n- The retry function correctly uses `unknown` for error types, implements proper exponential backoff with jitter, and handles the max retry boundary correctly.\n- The TokenBucket class implements a standard token bucket rate limiter with correct refill logic.\n- The memoize function is appropriate for small, bounded key spaces as documented.\n\nMinor observations (not issues):\n- The memoize cache is unbounded, but the docstring explicitly calls this out as intentional for small key spaces. If used with large key spaces, an LRU cache would be preferable, but that's a usage concern, not a code defect.\n- The class usage for TokenBucket is reasonable here since it encapsulates mutable state, which is the one case where classes make sense over functional patterns.\n\nOverall: Clean, well-documented utility code. No changes recommended.",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor (Claude judges Gemini, Gemini judges Claude)",
+    "criteria": [
+      {
+        "name": "bug_detection",
+        "weight": 0.35,
+        "description": "Correctly identifies real bugs/issues. False positives reduce score.",
+        "scoringLevels": {
+          "1": "Misses all real bugs or identifies only trivially obvious issues",
+          "3": "Finds some bugs but misses the most critical one; includes false positives",
+          "5": "Identifies the primary bug but misses secondary issues or lacks precision",
+          "7": "Catches all significant bugs with accurate descriptions; minor omissions only",
+          "10": "Identifies every bug including subtle ones; zero false positives; precise root cause analysis"
+        }
+      },
+      {
+        "name": "actionability",
+        "weight": 0.3,
+        "description": "Specific, includes code examples, explains why issues matter.",
+        "scoringLevels": {
+          "1": "Vague observations with no fix suggestions",
+          "3": "Identifies issues but fixes are hand-wavy or incomplete",
+          "5": "Provides fix direction but lacks concrete code examples",
+          "7": "Includes specific code fixes for most issues with clear explanations",
+          "10": "Every issue has a concrete, copy-pasteable fix with explanation of why it works"
+        }
+      },
+      {
+        "name": "false_positive_rate",
+        "weight": 0.2,
+        "description": "Avoids flagging non-issues.",
+        "scoringLevels": {
+          "1": "Majority of flagged issues are non-issues or style preferences",
+          "3": "Several false positives mixed with real issues",
+          "5": "One or two false positives but mostly accurate",
+          "7": "No false positives; every flagged item is a genuine concern",
+          "10": "Zero false positives AND explicitly acknowledges clean patterns as intentional"
+        }
+      },
+      {
+        "name": "severity_triage",
+        "weight": 0.1,
+        "description": "Correctly prioritizes critical vs minor issues.",
+        "scoringLevels": {
+          "1": "No severity classification or completely wrong priorities",
+          "3": "Severity labels exist but critical bugs rated as low priority",
+          "5": "Mostly correct severity ordering with one or two swaps",
+          "7": "Accurate severity classification for all issues",
+          "10": "Perfect severity triage with clear justification for each level"
+        }
+      },
+      {
+        "name": "conciseness",
+        "weight": 0.05,
+        "description": "Response is appropriately concise. No unnecessary repetition, filler, or over-explanation of obvious points.",
+        "scoringLevels": {
+          "1": "Extremely verbose; repeats the same point multiple ways; heavy filler and padding",
+          "3": "Noticeably wordy; could be cut by 30%+ without losing substance",
+          "5": "Reasonable length but includes some unnecessary elaboration",
+          "7": "Concise and focused; every paragraph contributes meaningful analysis",
+          "10": "Maximally efficient; zero filler; dense with actionable insight"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "hard",
+    "tags": [
+      "false-positive",
+      "clean-code",
+      "retry",
+      "rate-limiting",
+      "memoization"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

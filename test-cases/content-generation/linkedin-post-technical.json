@@ -1,0 +1,73 @@
+{
+  "id": "linkedin-post-technical",
+  "category": "content-generation",
+  "prompt": "Write a LinkedIn post about automating Proxmox LXC container deployment with TypeScript and the Proxmox API. Audience: DevOps engineers and infrastructure folks. Tone: technical but accessible, no marketing fluff. Goal: share a useful pattern and invite discussion. Max 200 words.",
+  "scoringMethod": "judge",
+  "goldenAnswer": "Spent the last week building TypeScript wrappers for Proxmox LXC container management. The Proxmox API is powerful but the documentation is... sparse.\n\nKey pattern that worked: treat container creation as a two-phase operation. First, create the container with minimal config (just the template and basic resources). Then immediately run a second API call to set up networking, mount points, and startup behavior. Trying to do it all in one call leads to race conditions with the storage backend.\n\nAnother gotcha: the API returns task IDs, not completion status. You have to poll /nodes/{node}/tasks/{upid}/status until the task finishes. Built a simple exponential backoff poller that saved a ton of debugging time.\n\nCode is TypeScript + Bun for fast startup. Using Zod to validate API responses because the Proxmox API will happily return partial data on edge cases.\n\nAnyone else automating Proxmox at scale? Curious how you're handling template management and container lifecycle hooks.",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor",
+    "criteria": [
+      {
+        "name": "tone_match",
+        "weight": 0.4,
+        "description": "Matches user's authentic voice and style.",
+        "scoringLevels": {
+          "1": "Generic corporate tone, clearly AI-generated feel",
+          "3": "Somewhat natural but misses the technical-but-accessible voice",
+          "5": "Reasonable tone but occasionally slips into marketing speak or over-formality",
+          "7": "Matches the requested voice well; reads as authentic",
+          "10": "Indistinguishable from the golden answer's voice; perfectly calibrated tone"
+        }
+      },
+      {
+        "name": "technical_accuracy",
+        "weight": 0.3,
+        "description": "Technically correct, no oversimplification.",
+        "scoringLevels": {
+          "1": "Contains factual errors or fundamentally misunderstands the technology",
+          "3": "Technically vague; no real depth or insight",
+          "5": "Technically correct but surface-level; no novel insight",
+          "7": "Accurate with specific technical details that demonstrate understanding",
+          "10": "Deep technical accuracy with specific, correct details matching the golden answer's depth"
+        }
+      },
+      {
+        "name": "engagement",
+        "weight": 0.2,
+        "description": "Compelling hook, clear structure, actionable takeaway.",
+        "scoringLevels": {
+          "1": "No hook, buried lede, reads like documentation",
+          "3": "Weak opening; structure exists but no compelling reason to keep reading",
+          "5": "Decent structure with a clear point, but unremarkable",
+          "7": "Strong hook, clear structure, ends with actionable takeaway or discussion prompt",
+          "10": "Immediately compelling; reader would stop scrolling; clear call to action"
+        }
+      },
+      {
+        "name": "brevity",
+        "weight": 0.1,
+        "description": "Concise, no filler, appropriate length.",
+        "scoringLevels": {
+          "1": "Wall of text with excessive filler, repetition, or padding",
+          "3": "Noticeably verbose; could be cut by 40%+ without losing substance",
+          "5": "Appropriate length but has some filler sentences",
+          "7": "Concise; every sentence earns its place",
+          "10": "Maximally dense; cannot remove a sentence without losing meaning"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "medium",
+    "tags": [
+      "linkedin",
+      "proxmox",
+      "infrastructure",
+      "technical"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

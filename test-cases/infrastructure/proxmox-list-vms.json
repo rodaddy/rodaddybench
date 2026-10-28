@@ -1,0 +1,30 @@
+{
+  "id": "proxmox-list-vms",
+  "category": "infrastructure",
+  "prompt": "What is the Proxmox CLI command to list all running VMs on the local node?",
+  "scoringMethod": "checklist",
+  "goldenAnswer": "qm list",
+  "checklistItems": [
+    {
+      "id": "correct-command",
+      "description": "Uses qm command",
+      "pattern": "\\bqm\\b",
+      "patternFlags": "i",
+      "weight": 1
+    },
+    {
+      "id": "correct-subcommand",
+      "description": "Uses list subcommand",
+      "pattern": "\\blist\\b",
+      "patternFlags": "i",
+      "weight": 1
+    }
+  ],
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "easy",
+    "tags": ["proxmox", "cli", "basic"],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-24T00:00:00Z"
+  }
+}

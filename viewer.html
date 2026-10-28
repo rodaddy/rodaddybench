@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RodaddyBench Results</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    font-feature-settings: "kern" 1;
+  }
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 3px solid transparent;
+    border-image: linear-gradient(90deg, var(--blue), var(--purple)) 1;
+  }
+  h2 { font-size: 1.3rem; margin: 1.5rem 0 0.75rem; color: var(--blue); }
+  h3 { font-size: 1.1rem; margin: 1rem 0 0.5rem; }
+  .meta { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .meta span { margin-right: 1.5rem; }
+  @keyframes dropPulse {
+    0%, 100% { border-color: var(--border); }
+    50% { border-color: rgba(88, 166, 255, 0.3); }
+  }
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 4rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    margin: 2rem auto;
+    max-width: 600px;
+    animation: dropPulse 3s ease-in-out infinite;
+    position: relative;
+  }
+  .drop-zone::before {
+    content: "\1F4C4";
+    display: block;
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.6;
+  }
+  .drop-zone:hover, .drop-zone.dragover { border-color: var(--blue); animation: none; }
+  .drop-zone p { color: var(--text-dim); margin-top: 0.5rem; font-size: 0.9rem; }
+  #dashboard { display: none; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5rem 0 1.5rem;
+    font-size: 0.85rem;
+  }
+  th, td {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: var(--surface);
+    color: var(--text-dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    position: sticky;
+    top: 0;
+    cursor: pointer;
+  }
+  th:hover { color: var(--text); }
+  thead tr { border-bottom: 2px solid var(--blue); }
+  tbody tr:nth-child(4n+1) td { background: rgba(255, 255, 255, 0.02); }
+  tr:hover td { background: rgba(88, 166, 255, 0.08); }
+  .score {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .score-high { color: var(--green); }
+  .score-mid { color: var(--yellow); }
+  .score-low { color: var(--red); }
+  .num { font-variant-numeric: tabular-nums; text-align: right; }
+  .bar-cell { width: 120px; }
+  .bar-bg {
+    background: var(--surface);
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  .stat-card .label { color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-card .value { font-size: 1.5rem; font-weight: 700; margin-top: 0.25rem; letter-spacing: -0.02em; }
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .tab {
+    padding: 0.4rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    transition: all 0.2s;
+  }
+  .tab:hover { color: var(--text); border-color: var(--text-dim); }
+  .tab.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .error-tag {
+    display: inline-block;
+    background: rgba(248, 81, 73, 0.15);
+    color: var(--red);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+  }
+  .expand-btn {
+    background: none;
+    border: none;
+    color: var(--blue);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+  }
+  .detail-row { display: none; }
+  .detail-row.open { display: table-row; }
+  .detail-cell {
+    background: var(--surface);
+    padding: 1rem;
+    padding-left: 1.25rem;
+    border-left: 3px solid var(--blue);
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .filter-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .filter-bar input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
+    color: var(--text);
+    font-size: 0.85rem;
+    width: 250px;
+  }
+  .filter-bar input::placeholder { color: var(--text-dim); }
+  /* Criterion breakdown table */
+  .criterion-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    margin: 0.75rem 0;
+  }
+  .criterion-table th {
+    background: rgba(48, 54, 61, 0.5);
+    color: var(--text-dim);
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    position: static;
+  }
+  .criterion-table td {
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+    vertical-align: middle;
+  }
+  .criterion-table tr:last-child td { border-bottom: none; }
+  .criterion-table .criterion-name { font-weight: 500; color: var(--text); }
+  .criterion-table .criterion-desc { color: var(--text-dim); font-size: 0.72rem; max-width: 300px; }
+  .criterion-table .criterion-weight { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .criterion-bar-bg {
+    background: rgba(48, 54, 61, 0.8);
+    border-radius: 3px;
+    height: 6px;
+    width: 60px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.4rem;
+  }
+  .criterion-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+  }
+  .detail-section-label {
+    color: var(--blue);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+  .bias-flag {
+    display: inline-block;
+    background: var(--red);
+    color: #fff;
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+    cursor: default;
+  }
+  .consistent-tag {
+    color: var(--green);
+    font-weight: 600;
+  }
+  .inconsistent-tag {
+    display: inline-block;
+    background: rgba(248, 81, 73, 0.15);
+    color: var(--red);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  /* Radar chart */
+  #radarContainer {
+    max-width: 500px;
+    margin: 1rem auto;
+    text-align: center;
+  }
+  #radarContainer svg { width: 100%; height: auto; }
+  .radar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  .radar-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    user-select: none;
+  }
+  .radar-legend-item.hidden { opacity: 0.4; text-decoration: line-through; }
+  .radar-legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .radar-legend-score {
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    margin-left: 0.15rem;
+  }
+  /* Scroll indicator for tables */
+  .scroll-wrapper {
+    position: relative;
+    overflow-x: auto;
+  }
+  .scroll-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 30px;
+    background: linear-gradient(90deg, transparent, var(--bg));
+    pointer-events: none;
+    opacity: 0.8;
+  }
+  /* Footer */
+  .viewer-footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  /* Ranking #1 row accent */
+  #rankingTable tbody tr:first-child td {
+    border-left: 3px solid var(--green);
+  }
+  #rankingTable tbody tr:first-child td:first-child {
+    padding-left: calc(0.75rem - 3px);
+  }
+  /* Responsive */
+  @media (max-width: 768px) {
+    .filter-bar input { width: 100%; }
+    body { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <h1>RodaddyBench Viewer</h1>
+  <div class="drop-zone" id="dropZone">
+    <h2>Drop a run JSON file here</h2>
+    <p>Or click to browse -- files are in <code>results/runs/*.json</code></p>
+    <input type="file" id="fileInput" accept=".json" style="display:none">
+  </div>
+</div>
+
+<div id="dashboard">
+  <h1>RodaddyBench Results</h1>
+  <div class="meta" id="runMeta"></div>
+
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <h2>Model Rankings</h2>
+  <div class="tabs" id="categoryTabs"></div>
+  <table id="rankingTable"><thead></thead><tbody></tbody></table>
+
+  <h2>Category Profiles</h2>
+  <div id="radarContainer"></div>
+
+  <h2>Detailed Results</h2>
+  <div class="filter-bar">
+    <input type="text" id="searchFilter" placeholder="Filter by model or test case...">
+  </div>
+  <div class="scroll-wrapper">
+    <table id="detailTable"><thead></thead><tbody></tbody></table>
+  </div>
+
+  <div class="viewer-footer">RodaddyBench v1.1 &middot; 2026</div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+// File loading
+const dropZone = $('#dropZone');
+const fileInput = $('#fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const run = JSON.parse(e.target.result);
+      renderDashboard(run);
+    } catch (err) {
+      alert('Invalid JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function scoreClass(s) {
+  if (s >= 0.7) return 'score-high';
+  if (s >= 0.4) return 'score-mid';
+  return 'score-low';
+}
+
+function pct(v) { return Math.round(v * 100) + '%'; }
+
+function formatCost(v) {
+  if (!v || v === 0) return '-';
+  return v < 0.01 ? '$' + v.toFixed(4) : '$' + v.toFixed(2);
+}
+
+function formatLatency(ms) {
+  if (ms > 10000) return (ms / 1000).toFixed(1) + 's';
+  return Math.round(ms) + 'ms';
+}
+
+function barHtml(value, max, color) {
+  const w = max > 0 ? (value / max * 100) : 0;
+  return `<div class="bar-bg"><div class="bar-fill" style="width:${w}%;background:linear-gradient(90deg, ${color}, color-mix(in srgb, ${color} 70%, #000))"></div></div>`;
+}
+
+let currentRun = null;
+let currentCategory = 'overall';
+let sortCol = 1;
+let sortAsc = false;
+
+function renderDashboard(run) {
+  currentRun = run;
+  $('#loader').style.display = 'none';
+  $('#dashboard').style.display = 'block';
+
+  // Meta
+  const d = new Date(run.timestamp);
+  $('#runMeta').innerHTML = [
+    `<span>Run: ${run.runId}</span>`,
+    `<span>${d.toLocaleDateString()} ${d.toLocaleTimeString()}</span>`,
+    `<span>${run.modelsDiscovered.length} models</span>`,
+    `<span>${run.testCaseCount} test cases</span>`,
+    `<span>Duration: ${(run.durationMs / 1000).toFixed(1)}s</span>`,
+    run.gitCommit ? `<span>Git: ${run.gitCommit}${run.gitDirty ? '*' : ''}</span>` : '',
+  ].join('');
+
+  // Stats
+  const working = run.summary.filter(s => s.errorCount < run.testCaseCount);
+  const topModel = working.sort((a, b) => b.overallScore - a.overallScore)[0];
+  const totalCost = run.summary.reduce((s, m) => s + (m.totalCostUsd || 0), 0);
+  const totalErrors = run.results.filter(r => r.error).length;
+
+  const swapResults = run.results.filter(r => r.judgeMetadata?.positionSwap);
+  const swapTests = swapResults.length;
+  const biasFlags = swapResults.filter(r => r.judgeMetadata.positionSwap.isConsistent === false).length;
+
+  $('#statsGrid').innerHTML = [
+    stat('Models Tested', run.modelsDiscovered.length),
+    stat('Working Models', working.length, working.length === run.modelsDiscovered.length ? 'var(--green)' : 'var(--yellow)'),
+    stat('Top Model', topModel ? topModel.model : '-'),
+    stat('Top Score', topModel ? pct(topModel.overallScore) : '-', 'var(--green)'),
+    stat('Total Cost', formatCost(totalCost)),
+    stat('Errors', totalErrors, totalErrors > 0 ? 'var(--red)' : 'var(--green)'),
+    stat('Swap Tests', swapTests, swapTests > 0 ? 'var(--blue)' : 'var(--text-dim)'),
+    stat('Bias Flags', biasFlags, biasFlags > 0 ? 'var(--red)' : 'var(--green)'),
+  ].join('');
+
+  // Category tabs
+  const categories = [...new Set(run.results.map(r => r.category))].sort();
+  $('#categoryTabs').innerHTML = [
+    `<div class="tab active" data-cat="overall">Overall</div>`,
+    ...categories.map(c => `<div class="tab" data-cat="${c}">${c}</div>`)
+  ].join('');
+  $$('.tab').forEach(t => t.addEventListener('click', () => {
+    $$('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    currentCategory = t.dataset.cat;
+    renderRankings();
+  }));
+
+  renderRankings();
+  renderRadarChart(run);
+  renderDetails();
+
+  // Search filter
+  $('#searchFilter').addEventListener('input', renderDetails);
+}
+
+function stat(label, value, color) {
+  return `<div class="stat-card"><div class="label">${label}</div><div class="value" ${color ? `style="color:${color}"` : ''}>${value}</div></div>`;
+}
+
+function renderRankings() {
+  const run = currentRun;
+  const isOverall = currentCategory === 'overall';
+
+  let rows = run.summary.map(s => {
+    const score = isOverall ? s.overallScore : (s.categoryScores[currentCategory] ?? null);
+    return { ...s, displayScore: score };
+  }).filter(s => s.displayScore !== null);
+
+  rows.sort((a, b) => b.displayScore - a.displayScore);
+
+  const maxLatency = Math.max(...rows.map(r => r.avgLatencyMs));
+  const maxCost = Math.max(...rows.map(r => r.totalCostUsd || 0));
+
+  const thead = $('#rankingTable thead');
+  thead.innerHTML = `<tr>
+    <th>#</th>
+    <th>Model</th>
+    <th>Score</th>
+    <th class="bar-cell">Score</th>
+    <th>Avg Latency</th>
+    <th class="bar-cell">Latency</th>
+    <th>Cost</th>
+    <th>Q/$</th>
+    <th>Errors</th>
+    <th>Bias</th>
+  </tr>`;
+
+  const tbody = $('#rankingTable tbody');
+  tbody.innerHTML = rows.map((r, i) => {
+    const sc = scoreClass(r.displayScore);
+    const qpd = r.qualityPerDollar != null ? r.qualityPerDollar.toFixed(1) : '-';
+    const barColor = r.displayScore >= 0.7 ? 'var(--green)' : r.displayScore >= 0.4 ? 'var(--yellow)' : 'var(--red)';
+
+    // Bias column: count position swap inconsistencies for this model
+    const modelSwapResults = run.results.filter(res => res.model === r.model && res.judgeMetadata?.positionSwap);
+    const modelInconsistent = modelSwapResults.filter(res => res.judgeMetadata.positionSwap.isConsistent === false).length;
+    const modelSwapTotal = modelSwapResults.length;
+    let biasCell;
+    if (modelSwapTotal === 0) {
+      biasCell = '<span style="color:var(--text-dim)">-</span>';
+    } else if (modelInconsistent === 0) {
+      biasCell = `<span style="color:var(--green)">0/${modelSwapTotal}</span>`;
+    } else {
+      const ratio = modelInconsistent / modelSwapTotal;
+      const biasColor = ratio >= 0.3 ? 'var(--red)' : 'var(--yellow)';
+      biasCell = `<span style="color:${biasColor}">${modelInconsistent}/${modelSwapTotal}</span>`;
+    }
+
+    return `<tr>
+      <td class="num">${i + 1}</td>
+      <td>${r.model}</td>
+      <td class="score ${sc}">${pct(r.displayScore)}</td>
+      <td class="bar-cell">${barHtml(r.displayScore, 1, barColor)}</td>
+      <td class="num">${formatLatency(r.avgLatencyMs)}</td>
+      <td class="bar-cell">${barHtml(r.avgLatencyMs, maxLatency, 'var(--purple)')}</td>
+      <td class="num">${formatCost(r.totalCostUsd)}</td>
+      <td class="num">${qpd}</td>
+      <td class="num">${r.errorCount > 0 ? `<span class="error-tag">${r.errorCount}</span>` : '0'}</td>
+      <td class="num">${biasCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDetails() {
+  const run = currentRun;
+  const filter = ($('#searchFilter').value || '').toLowerCase();
+
+  let results = run.results;
+  if (filter) {
+    results = results.filter(r =>
+      r.model.toLowerCase().includes(filter) ||
+      r.testCase.toLowerCase().includes(filter) ||
+      r.category.toLowerCase().includes(filter)
+    );
+  }
+
+  // Sort by model then test case
+  results.sort((a, b) => a.model.localeCompare(b.model) || a.testCase.localeCompare(b.testCase));
+
+  const thead = $('#detailTable thead');
+  thead.innerHTML = `<tr>
+    <th>Model</th>
+    <th>Test Case</th>
+    <th>Category</th>
+    <th>Score</th>
+    <th>Latency</th>
+    <th>Tokens</th>
+    <th>Cost</th>
+    <th></th>
+  </tr>`;
+
+  const tbody = $('#detailTable tbody');
+  tbody.innerHTML = results.map((r, i) => {
+    const sc = scoreClass(r.score);
+    const hasError = !!r.error;
+    const biasBadge = (r.judgeMetadata?.positionSwap?.isConsistent === false)
+      ? `<span class="bias-flag" title="Position swap delta: ${r.judgeMetadata.positionSwap.delta.toFixed(2)}">!</span>`
+      : '';
+    return `<tr>
+      <td>${r.model}</td>
+      <td>${r.testCase}</td>
+      <td>${r.category}</td>
+      <td class="score ${sc}">${hasError ? '<span class="error-tag">ERR</span>' : pct(r.score)}${biasBadge}</td>
+      <td class="num">${formatLatency(r.latencyMs)}</td>
+      <td class="num">${r.tokens.total.toLocaleString()}</td>
+      <td class="num">${formatCost(r.costUsd)}</td>
+      <td><button class="expand-btn" data-idx="${i}">details</button></td>
+    </tr>
+    <tr class="detail-row" id="detail-${i}">
+      <td colspan="8" class="detail-cell">${detailContent(r)}</td>
+    </tr>`;
+  }).join('');
+
+  // Expand buttons
+  tbody.querySelectorAll('.expand-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = $(`#detail-${btn.dataset.idx}`);
+      row.classList.toggle('open');
+      btn.textContent = row.classList.contains('open') ? 'hide' : 'details';
+    });
+  });
+}
+
+function criterionScoreClass(score, maxScore) {
+  const ratio = maxScore > 0 ? score / maxScore : 0;
+  if (ratio >= 0.7) return 'score-high';
+  if (ratio >= 0.4) return 'score-mid';
+  return 'score-low';
+}
+
+function criterionTable(breakdown) {
+  if (!breakdown || !Array.isArray(breakdown) || breakdown.length === 0) return '';
+  const rows = breakdown.map(c => {
+    const sc = criterionScoreClass(c.score, c.maxScore);
+    const barW = c.maxScore > 0 ? (c.score / c.maxScore * 100) : 0;
+    const barColor = c.score / c.maxScore >= 0.7 ? 'var(--green)' : c.score / c.maxScore >= 0.4 ? 'var(--yellow)' : 'var(--red)';
+    return `<tr>
+      <td class="criterion-name">${escHtml(c.name)}</td>
+      <td class="score ${sc}" style="text-align:center">${c.score}/${c.maxScore}<span class="criterion-bar-bg"><span class="criterion-bar-fill" style="width:${barW}%;background:${barColor}"></span></span></td>
+      <td class="criterion-weight" style="text-align:center">${(c.weight * 100).toFixed(0)}%</td>
+      <td class="criterion-desc">${escHtml(c.description || '')}</td>
+    </tr>`;
+  }).join('');
+  return `<table class="criterion-table">
+    <thead><tr><th>Criterion</th><th>Score</th><th>Weight</th><th>Description</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function detailContent(r) {
+  let html = [];
+  if (r.error) html.push(`<div style="color:var(--red);margin-bottom:0.5rem">ERROR: ${escHtml(r.error)}</div>`);
+  if (r.judgeMetadata) {
+    const j = r.judgeMetadata;
+    html.push(`<div class="detail-section-label">Judge</div>`);
+    html.push(`<div style="margin-bottom:0.5rem">${escHtml(j.judgeModel)} (confidence: ${pct(j.judgeConfidence)})</div>`);
+    // Criterion breakdown table or flat fallback
+    if (j.criterionBreakdown && Array.isArray(j.criterionBreakdown) && j.criterionBreakdown.length > 0) {
+      html.push(`<div class="detail-section-label">Criteria Breakdown</div>`);
+      html.push(criterionTable(j.criterionBreakdown));
+    } else if (j.criteriaScores) {
+      html.push(`<div class="detail-section-label">Criteria Scores</div>`);
+      html.push(`<div style="margin-bottom:0.5rem">${Object.entries(j.criteriaScores).map(([k,v]) => `${k}: ${pct(v)}`).join(', ')}</div>`);
+    }
+    // Position swap section
+    if (j.positionSwap) {
+      const ps = j.positionSwap;
+      html.push(`<div class="detail-section-label">Position Swap</div>`);
+      const consistencyLabel = ps.isConsistent
+        ? '<span class="consistent-tag">consistent</span>'
+        : '<span class="inconsistent-tag">INCONSISTENT</span>';
+      html.push(`<div style="margin-bottom:0.25rem">Status: ${consistencyLabel} (delta: ${ps.delta.toFixed(2)}, threshold: ${ps.consistencyThreshold.toFixed(2)})</div>`);
+      html.push(`<div style="margin-bottom:0.25rem">Original: ${pct(ps.originalOverall)} | Swapped: ${pct(ps.swappedOverall)} | Averaged: ${pct((ps.originalOverall + ps.swappedOverall) / 2)}</div>`);
+      const deltas = Object.entries(ps.originalScores).map(([k, v]) => {
+        const diff = v - (ps.swappedScores[k] || 0);
+        return `${k}: ${diff >= 0 ? '+' : ''}${diff.toFixed(1)}`;
+      }).join(', ');
+      html.push(`<div style="margin-bottom:0.5rem;color:var(--text-dim);font-size:0.78rem">Per-criterion deltas: ${deltas}</div>`);
+    }
+
+    // Verbosity metadata section
+    if (j.verbosityMetadata) {
+      const vm = j.verbosityMetadata;
+      const ratioColor = vm.lengthRatio > 3.0 ? 'var(--red)' : vm.lengthRatio > 2.0 ? 'var(--yellow)' : 'var(--text)';
+      html.push(`<div class="detail-section-label">Verbosity</div>`);
+      html.push(`<div style="margin-bottom:0.5rem">Length ratio <span style="color:${ratioColor};font-weight:600">${vm.lengthRatio.toFixed(1)}x</span> (response: ${vm.responseLength.toLocaleString()} chars, golden: ${vm.goldenAnswerLength.toLocaleString()} chars)</div>`);
+    }
+
+    html.push(`<div class="detail-section-label">Reasoning</div>`);
+    html.push(`<div style="white-space:pre-wrap;margin-bottom:0.5rem">${escHtml(j.judgeReasoning)}</div>`);
+  }
+  html.push(`<div class="detail-section-label">Response (${r.response.length} chars)</div>`);
+  html.push(`<div style="white-space:pre-wrap">${escHtml(r.response.slice(0, 2000))}${r.response.length > 2000 ? '\n...(truncated)' : ''}</div>`);
+  if (r.tokens.cachedPrompt) html.push(`<div style="margin-top:0.5rem;color:var(--text-dim)">Cached tokens: ${r.tokens.cachedPrompt}</div>`);
+  return html.join('');
+}
+
+// -- Radar chart --
+const radarColors = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#f97583','#79c0ff','#56d364','#e3b341','#d2a8ff'];
+let visibleModels = new Set();
+
+function renderRadarChart(run) {
+  const container = $('#radarContainer');
+  if (!run.summary || run.summary.length === 0) { container.innerHTML = ''; return; }
+
+  // Extract categories from first model's categoryScores
+  const categories = Object.keys(run.summary[0].categoryScores || {}).sort();
+  if (categories.length < 3) { container.innerHTML = '<p style="color:var(--text-dim)">Need at least 3 categories for radar chart</p>'; return; }
+
+  // Init visible models
+  visibleModels = new Set(run.summary.map(s => s.model));
+
+  drawRadar(run, categories, container);
+}
+
+function drawRadar(run, categories, container) {
+  const cx = 200, cy = 200, radius = 150;
+  const n = categories.length;
+  const angleStep = (2 * Math.PI) / n;
+  const startAngle = -Math.PI / 2; // start from top
+
+  // Helper: get x,y for axis index at given distance from center
+  function pointAt(i, dist) {
+    const angle = startAngle + i * angleStep;
+    return { x: cx + dist * Math.cos(angle), y: cy + dist * Math.sin(angle) };
+  }
+
+  // Grid lines
+  let gridSvg = '';
+  for (const level of [0.25, 0.5, 0.75, 1.0]) {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const p = pointAt(i, radius * level);
+      pts.push(`${p.x},${p.y}`);
+    }
+    gridSvg += `<polygon points="${pts.join(' ')}" fill="none" stroke="var(--border)" stroke-width="1" opacity="${level === 1 ? 0.6 : 0.3}"/>`;
+  }
+
+  // Axis lines
+  let axisSvg = '';
+  for (let i = 0; i < n; i++) {
+    const p = pointAt(i, radius);
+    axisSvg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="var(--border)" stroke-width="1" opacity="0.3"/>`;
+  }
+
+  // Category labels
+  let labelSvg = '';
+  for (let i = 0; i < n; i++) {
+    const p = pointAt(i, radius + 20);
+    const anchor = Math.abs(p.x - cx) < 5 ? 'middle' : p.x > cx ? 'start' : 'end';
+    const dy = p.y < cy ? '-0.3em' : p.y > cy ? '1em' : '0.35em';
+    labelSvg += `<text x="${p.x}" y="${p.y}" text-anchor="${anchor}" dy="${dy}" fill="var(--text-dim)" font-size="11">${escHtml(categories[i])}</text>`;
+  }
+
+  // Scale labels
+  let scaleSvg = '';
+  for (const level of [0.25, 0.5, 0.75, 1.0]) {
+    const p = pointAt(0, radius * level);
+    scaleSvg += `<text x="${p.x + 4}" y="${p.y - 4}" fill="var(--text-dim)" font-size="9" opacity="0.6">${(level * 100).toFixed(0)}%</text>`;
+  }
+
+  // Model polygons
+  let polySvg = '';
+  run.summary.forEach((s, idx) => {
+    if (!visibleModels.has(s.model)) return;
+    const color = radarColors[idx % radarColors.length];
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const val = s.categoryScores[categories[i]] ?? 0;
+      const p = pointAt(i, radius * Math.min(val, 1));
+      pts.push(`${p.x},${p.y}`);
+    }
+    polySvg += `<polygon points="${pts.join(' ')}" fill="${color}" fill-opacity="0.12" stroke="${color}" stroke-width="2"/>`;
+    // Dots at vertices
+    for (let i = 0; i < n; i++) {
+      const val = s.categoryScores[categories[i]] ?? 0;
+      const p = pointAt(i, radius * Math.min(val, 1));
+      polySvg += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}"/>`;
+    }
+  });
+
+  const svg = `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+    ${gridSvg}${axisSvg}${polySvg}${labelSvg}${scaleSvg}
+  </svg>`;
+
+  // Legend
+  const legendItems = run.summary.map((s, idx) => {
+    const color = radarColors[idx % radarColors.length];
+    const hidden = !visibleModels.has(s.model) ? ' hidden' : '';
+    return `<div class="radar-legend-item${hidden}" data-model="${escHtml(s.model)}">
+      <span class="radar-legend-swatch" style="background:${color}"></span>
+      <span>${escHtml(s.model)}</span>
+      <span class="radar-legend-score">${pct(s.overallScore)}</span>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = svg + `<div class="radar-legend">${legendItems}</div>`;
+
+  // Legend click handlers
+  container.querySelectorAll('.radar-legend-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const model = item.dataset.model;
+      if (visibleModels.has(model)) {
+        // Don't allow hiding all
+        if (visibleModels.size > 1) visibleModels.delete(model);
+      } else {
+        visibleModels.add(model);
+      }
+      drawRadar(run, categories, container);
+    });
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

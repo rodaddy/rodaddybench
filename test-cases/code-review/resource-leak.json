@@ -1,0 +1,86 @@
+{
+  "id": "resource-leak",
+  "category": "code-review",
+  "prompt": "Review this TypeScript code for issues:\n\n```typescript\nimport { Database } from 'bun:sqlite';\nimport { readdir } from 'fs/promises';\n\ninterface MigrationResult {\n  applied: string[];\n  failed: string[];\n}\n\nexport async function runMigrations(migrationsDir: string): Promise<MigrationResult> {\n  const files = await readdir(migrationsDir);\n  const sqlFiles = files.filter(f => f.endsWith('.sql')).sort();\n  \n  const applied: string[] = [];\n  const failed: string[] = [];\n  \n  for (const file of sqlFiles) {\n    const db = new Database('app.db');\n    \n    try {\n      const sql = await Bun.file(`${migrationsDir}/${file}`).text();\n      db.run(sql);\n      applied.push(file);\n    } catch (error) {\n      failed.push(file);\n      // Continue with next migration\n    }\n  }\n  \n  return { applied, failed };\n}\n\nexport async function exportData(tables: string[]): Promise<Record<string, unknown[]>> {\n  const result: Record<string, unknown[]> = {};\n  \n  for (const table of tables) {\n    const db = new Database('app.db');\n    result[table] = db.query(`SELECT * FROM ${table}`).all();\n  }\n  \n  return result;\n}\n\nexport function watchDatabase(callback: (change: string) => void): void {\n  setInterval(() => {\n    const db = new Database('app.db');\n    const changes = db.query('SELECT * FROM change_log WHERE processed = 0').all();\n    for (const change of changes) {\n      callback(JSON.stringify(change));\n    }\n    db.run('UPDATE change_log SET processed = 1 WHERE processed = 0');\n  }, 1000);\n}\n```",
+  "scoringMethod": "judge",
+  "goldenAnswer": "## Issues Found\n\n1. [Critical] Database connection leak in runMigrations (line 17)\n   - Why: A new Database connection is opened per migration file but never closed. If there are 50 migrations, 50 file handles remain open. The connection isn't closed in the catch block either, so failures also leak.\n   - Fix: Use try/finally: `const db = new Database('app.db'); try { ... } finally { db.close(); }` Or better: open one connection outside the loop and reuse it.\n\n2. [Critical] Database connection leak in exportData (line 35)\n   - Why: Same pattern -- new connection per table, never closed. Each iteration leaks a file descriptor.\n   - Fix: Open one connection before the loop, use it for all queries, close after: `const db = new Database('app.db'); try { for (const table of tables) { ... } } finally { db.close(); }`\n\n3. [Critical] Database connection leak in watchDatabase (line 43)\n   - Why: setInterval opens a new connection every second and never closes it. This will exhaust file descriptors within minutes.\n   - Fix: Open the connection once outside setInterval and reuse it. Close on process exit.\n\n4. [High] SQL injection in exportData (line 36)\n   - Why: Table name is interpolated directly into SQL. While table names often come from internal code, if `tables` array comes from user input, it's exploitable.\n   - Fix: Validate table names against a whitelist or use `db.query('SELECT name FROM sqlite_master WHERE type=\"table\"')` to verify.\n\n5. [Medium] Silent error swallowing in runMigrations (lines 22-24)\n   - Why: Failed migrations are recorded in the array but the error itself is discarded. No logging, no error message preserved. Debugging migration failures becomes impossible.\n   - Fix: Store error details: `failed.push({ file, error: (error as Error).message })`\n\n6. [Medium] No interval cleanup in watchDatabase\n   - Why: setInterval returns a timer ID that's never stored. There's no way to stop the watcher, creating a permanent background process.\n   - Fix: Return the interval ID or an AbortController for cleanup.\n\n## Summary\nSystematic resource leak pattern: every function opens new Database connections without closing them. The watchDatabase function is particularly severe, leaking one connection per second. Consolidate to shared connections with proper lifecycle management.",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor (Claude judges Gemini, Gemini judges Claude)",
+    "criteria": [
+      {
+        "name": "bug_detection",
+        "weight": 0.35,
+        "description": "Correctly identifies real bugs/issues. False positives reduce score.",
+        "scoringLevels": {
+          "1": "Misses all real bugs or identifies only trivially obvious issues",
+          "3": "Finds some bugs but misses the most critical one; includes false positives",
+          "5": "Identifies the primary bug but misses secondary issues or lacks precision",
+          "7": "Catches all significant bugs with accurate descriptions; minor omissions only",
+          "10": "Identifies every bug including subtle ones; zero false positives; precise root cause analysis"
+        }
+      },
+      {
+        "name": "actionability",
+        "weight": 0.3,
+        "description": "Specific, includes code examples, explains why issues matter.",
+        "scoringLevels": {
+          "1": "Vague observations with no fix suggestions",
+          "3": "Identifies issues but fixes are hand-wavy or incomplete",
+          "5": "Provides fix direction but lacks concrete code examples",
+          "7": "Includes specific code fixes for most issues with clear explanations",
+          "10": "Every issue has a concrete, copy-pasteable fix with explanation of why it works"
+        }
+      },
+      {
+        "name": "false_positive_rate",
+        "weight": 0.2,
+        "description": "Avoids flagging non-issues.",
+        "scoringLevels": {
+          "1": "Majority of flagged issues are non-issues or style preferences",
+          "3": "Several false positives mixed with real issues",
+          "5": "One or two false positives but mostly accurate",
+          "7": "No false positives; every flagged item is a genuine concern",
+          "10": "Zero false positives AND explicitly acknowledges clean patterns as intentional"
+        }
+      },
+      {
+        "name": "severity_triage",
+        "weight": 0.1,
+        "description": "Correctly prioritizes critical vs minor issues.",
+        "scoringLevels": {
+          "1": "No severity classification or completely wrong priorities",
+          "3": "Severity labels exist but critical bugs rated as low priority",
+          "5": "Mostly correct severity ordering with one or two swaps",
+          "7": "Accurate severity classification for all issues",
+          "10": "Perfect severity triage with clear justification for each level"
+        }
+      },
+      {
+        "name": "conciseness",
+        "weight": 0.05,
+        "description": "Response is appropriately concise. No unnecessary repetition, filler, or over-explanation of obvious points.",
+        "scoringLevels": {
+          "1": "Extremely verbose; repeats the same point multiple ways; heavy filler and padding",
+          "3": "Noticeably wordy; could be cut by 30%+ without losing substance",
+          "5": "Reasonable length but includes some unnecessary elaboration",
+          "7": "Concise and focused; every paragraph contributes meaningful analysis",
+          "10": "Maximally efficient; zero filler; dense with actionable insight"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "medium",
+    "tags": [
+      "resource-leak",
+      "database",
+      "sqlite",
+      "file-descriptors",
+      "connection-management"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

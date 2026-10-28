@@ -1,0 +1,73 @@
+{
+  "id": "twitter-thread-start",
+  "category": "content-generation",
+  "prompt": "Write the first tweet for a technical Twitter thread about why cross-vendor judging matters for AI benchmarks. Hook: commercial benchmarks let models judge themselves, which creates bias. Our approach: Claude judges Gemini, Gemini judges Claude. Audience: AI engineers and researchers. Tone: punchy, technical, slightly contrarian. Max 280 characters.",
+  "scoringMethod": "judge",
+  "goldenAnswer": "Most AI benchmarks have a hidden bias: models judging their own output.\n\nClaude scores 95% on \"Claude-evaluated\" tasks. Gemini scores 94% on \"Gemini-evaluated\" tasks.\n\nCross-vendor judging fixes this: Claude judges Gemini, Gemini judges Claude.\n\nResults are... revealing. 🧵",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor",
+    "criteria": [
+      {
+        "name": "tone_match",
+        "weight": 0.4,
+        "description": "Matches user's authentic voice and style.",
+        "scoringLevels": {
+          "1": "Generic corporate tone, clearly AI-generated feel",
+          "3": "Somewhat natural but misses the technical-but-accessible voice",
+          "5": "Reasonable tone but occasionally slips into marketing speak or over-formality",
+          "7": "Matches the requested voice well; reads as authentic",
+          "10": "Indistinguishable from the golden answer's voice; perfectly calibrated tone"
+        }
+      },
+      {
+        "name": "technical_accuracy",
+        "weight": 0.3,
+        "description": "Technically correct, no oversimplification.",
+        "scoringLevels": {
+          "1": "Contains factual errors or fundamentally misunderstands the technology",
+          "3": "Technically vague; no real depth or insight",
+          "5": "Technically correct but surface-level; no novel insight",
+          "7": "Accurate with specific technical details that demonstrate understanding",
+          "10": "Deep technical accuracy with specific, correct details matching the golden answer's depth"
+        }
+      },
+      {
+        "name": "engagement",
+        "weight": 0.2,
+        "description": "Compelling hook, clear structure, actionable takeaway.",
+        "scoringLevels": {
+          "1": "No hook, buried lede, reads like documentation",
+          "3": "Weak opening; structure exists but no compelling reason to keep reading",
+          "5": "Decent structure with a clear point, but unremarkable",
+          "7": "Strong hook, clear structure, ends with actionable takeaway or discussion prompt",
+          "10": "Immediately compelling; reader would stop scrolling; clear call to action"
+        }
+      },
+      {
+        "name": "brevity",
+        "weight": 0.1,
+        "description": "Concise, no filler, appropriate length.",
+        "scoringLevels": {
+          "1": "Wall of text with excessive filler, repetition, or padding",
+          "3": "Noticeably verbose; could be cut by 40%+ without losing substance",
+          "5": "Appropriate length but has some filler sentences",
+          "7": "Concise; every sentence earns its place",
+          "10": "Maximally dense; cannot remove a sentence without losing meaning"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "easy",
+    "tags": [
+      "twitter",
+      "thread",
+      "punchy",
+      "contrarian"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

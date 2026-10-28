@@ -1,0 +1,73 @@
+{
+  "id": "github-pr-description",
+  "category": "content-generation",
+  "prompt": "Write a GitHub PR description for: added judge model scoring to the benchmark system. Changes include new scoreJudge() function that selects cross-vendor judges (Claude judges Gemini output, vice versa), structured rubrics with weighted criteria, and integration with existing deterministic scoring flow. Testing: created test cases for code-review and content-generation categories. Audience: future you reviewing this 6 months from now.",
+  "scoringMethod": "judge",
+  "goldenAnswer": "## Summary\n\nAdds judge-based scoring for subjective categories (code review quality, content tone matching) where deterministic scoring falls short.\n\n## Changes\n\n- New `scoreJudge()` in `src/scoring/judge.ts`: selects cross-vendor judge model, constructs rubric prompt, parses structured scores\n- Judge selection logic: prevents self-judging (Claude can't judge Claude), prefers opus > sonnet > pro > turbo\n- Rubrics in `src/scoring/rubrics.ts`: weighted criteria (bug_detection 0.4, actionability 0.3, etc.), validation at module load\n- Hybrid routing: `scoreTestCase()` checks `scoringMethod` field, calls judge or deterministic scorer\n- Test cases: 8 code-review, 8 content-generation with structured rubrics matching rubric definitions\n\n## Testing\n\n- Unit tests: rubric weight validation, cross-vendor selection logic\n- Integration test: run judge scoring on sample test case, verify score parsing\n- Manual: reviewed generated prompts for clarity, checked judge model responses\n\n## Notes\n\nJudge scoring costs more (2 API calls per test case: candidate model + judge). Run with `--categories` flag to limit scope during development.",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor",
+    "criteria": [
+      {
+        "name": "tone_match",
+        "weight": 0.4,
+        "description": "Matches user's authentic voice and style.",
+        "scoringLevels": {
+          "1": "Generic corporate tone, clearly AI-generated feel",
+          "3": "Somewhat natural but misses the technical-but-accessible voice",
+          "5": "Reasonable tone but occasionally slips into marketing speak or over-formality",
+          "7": "Matches the requested voice well; reads as authentic",
+          "10": "Indistinguishable from the golden answer's voice; perfectly calibrated tone"
+        }
+      },
+      {
+        "name": "technical_accuracy",
+        "weight": 0.3,
+        "description": "Technically correct, no oversimplification.",
+        "scoringLevels": {
+          "1": "Contains factual errors or fundamentally misunderstands the technology",
+          "3": "Technically vague; no real depth or insight",
+          "5": "Technically correct but surface-level; no novel insight",
+          "7": "Accurate with specific technical details that demonstrate understanding",
+          "10": "Deep technical accuracy with specific, correct details matching the golden answer's depth"
+        }
+      },
+      {
+        "name": "engagement",
+        "weight": 0.2,
+        "description": "Compelling hook, clear structure, actionable takeaway.",
+        "scoringLevels": {
+          "1": "No hook, buried lede, reads like documentation",
+          "3": "Weak opening; structure exists but no compelling reason to keep reading",
+          "5": "Decent structure with a clear point, but unremarkable",
+          "7": "Strong hook, clear structure, ends with actionable takeaway or discussion prompt",
+          "10": "Immediately compelling; reader would stop scrolling; clear call to action"
+        }
+      },
+      {
+        "name": "brevity",
+        "weight": 0.1,
+        "description": "Concise, no filler, appropriate length.",
+        "scoringLevels": {
+          "1": "Wall of text with excessive filler, repetition, or padding",
+          "3": "Noticeably verbose; could be cut by 40%+ without losing substance",
+          "5": "Appropriate length but has some filler sentences",
+          "7": "Concise; every sentence earns its place",
+          "10": "Maximally dense; cannot remove a sentence without losing meaning"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "easy",
+    "tags": [
+      "github",
+      "pr",
+      "description",
+      "technical"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

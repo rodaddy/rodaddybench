@@ -1,0 +1,73 @@
+{
+  "id": "documentation-section",
+  "category": "content-generation",
+  "prompt": "Write a documentation section explaining how the benchmark scoring system works. Cover: deterministic vs judge scoring, when each is used, how rubrics are structured, and how cross-vendor judging prevents bias. Audience: developers contributing new test cases. Tone: clear, comprehensive, with specific examples. Max 300 words.",
+  "scoringMethod": "judge",
+  "goldenAnswer": "## Scoring System\n\nThe benchmark uses two scoring methods depending on the category:\n\n### Deterministic Scoring\n\nUsed for categories with objectively correct answers:\n- **Infrastructure:** Exact command match (e.g., `pct list` for listing containers)\n- **Reasoning:** Key fact extraction with fuzzy matching\n\nDeterministic scoring is fast, free, and reproducible. Prefer it when possible.\n\n### Judge Scoring\n\nUsed for subjective categories where quality matters more than exact output:\n- **Code Review:** Bug detection quality, actionability of feedback, false positive rate\n- **Content Generation:** Tone matching, technical accuracy, engagement\n\nJudge scoring sends the test case and model response to another LLM (the \"judge\") which scores it against a structured rubric.\n\n### Rubrics\n\nEach judge-scored category has a rubric with weighted criteria:\n\n```json\n{\n  \"criteria\": [\n    {\"name\": \"bug_detection\", \"weight\": 0.4, \"description\": \"...\"},\n    {\"name\": \"actionability\", \"weight\": 0.3, \"description\": \"...\"},\n    {\"name\": \"false_positive_rate\", \"weight\": 0.2, \"description\": \"...\"},\n    {\"name\": \"severity_triage\", \"weight\": 0.1, \"description\": \"...\"}\n  ]\n}\n```\n\nWeights must sum to 1.0. Each criterion gets a 0-1 score from the judge, then weighted scores are summed for the final score.\n\n### Cross-Vendor Judging\n\nTo prevent bias, models never judge their own output:\n- Claude output → Gemini judge\n- Gemini output → Claude judge\n- DeepSeek output → Claude or Gemini judge\n\nThe system selects the best available cross-vendor judge (prefers opus > sonnet > pro > turbo for reliability). If no cross-vendor judge is available, scoring fails rather than allowing self-judging.\n\nThis design trades cost/latency for score reliability.",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor",
+    "criteria": [
+      {
+        "name": "tone_match",
+        "weight": 0.4,
+        "description": "Matches user's authentic voice and style.",
+        "scoringLevels": {
+          "1": "Generic corporate tone, clearly AI-generated feel",
+          "3": "Somewhat natural but misses the technical-but-accessible voice",
+          "5": "Reasonable tone but occasionally slips into marketing speak or over-formality",
+          "7": "Matches the requested voice well; reads as authentic",
+          "10": "Indistinguishable from the golden answer's voice; perfectly calibrated tone"
+        }
+      },
+      {
+        "name": "technical_accuracy",
+        "weight": 0.3,
+        "description": "Technically correct, no oversimplification.",
+        "scoringLevels": {
+          "1": "Contains factual errors or fundamentally misunderstands the technology",
+          "3": "Technically vague; no real depth or insight",
+          "5": "Technically correct but surface-level; no novel insight",
+          "7": "Accurate with specific technical details that demonstrate understanding",
+          "10": "Deep technical accuracy with specific, correct details matching the golden answer's depth"
+        }
+      },
+      {
+        "name": "engagement",
+        "weight": 0.2,
+        "description": "Compelling hook, clear structure, actionable takeaway.",
+        "scoringLevels": {
+          "1": "No hook, buried lede, reads like documentation",
+          "3": "Weak opening; structure exists but no compelling reason to keep reading",
+          "5": "Decent structure with a clear point, but unremarkable",
+          "7": "Strong hook, clear structure, ends with actionable takeaway or discussion prompt",
+          "10": "Immediately compelling; reader would stop scrolling; clear call to action"
+        }
+      },
+      {
+        "name": "brevity",
+        "weight": 0.1,
+        "description": "Concise, no filler, appropriate length.",
+        "scoringLevels": {
+          "1": "Wall of text with excessive filler, repetition, or padding",
+          "3": "Noticeably verbose; could be cut by 40%+ without losing substance",
+          "5": "Appropriate length but has some filler sentences",
+          "7": "Concise; every sentence earns its place",
+          "10": "Maximally dense; cannot remove a sentence without losing meaning"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "medium",
+    "tags": [
+      "documentation",
+      "comprehensive",
+      "technical",
+      "examples"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

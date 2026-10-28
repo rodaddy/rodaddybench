@@ -1,0 +1,51 @@
+{
+  "id": "lxc-create-container",
+  "category": "infrastructure",
+  "prompt": "Write the pct command to create a new LXC container with ID 105, using the ubuntu-22.04 template from local storage, with 2GB RAM and 2 CPU cores.",
+  "scoringMethod": "checklist",
+  "goldenAnswer": "pct create 105 local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst --memory 2048 --cores 2",
+  "checklistItems": [
+    {
+      "id": "correct-command",
+      "description": "Uses pct create command",
+      "pattern": "\\bpct\\s+create\\b",
+      "patternFlags": "i",
+      "weight": 1
+    },
+    {
+      "id": "container-id",
+      "description": "Specifies container ID 105",
+      "pattern": "\\b105\\b",
+      "patternFlags": "",
+      "weight": 1
+    },
+    {
+      "id": "template-source",
+      "description": "References local storage template",
+      "pattern": "local:vztmpl/",
+      "patternFlags": "i",
+      "weight": 1
+    },
+    {
+      "id": "memory-flag",
+      "description": "Sets memory to 2048 MB",
+      "pattern": "--memory\\s+2048",
+      "patternFlags": "i",
+      "weight": 1
+    },
+    {
+      "id": "cores-flag",
+      "description": "Sets CPU cores to 2",
+      "pattern": "--cores\\s+2\\b",
+      "patternFlags": "i",
+      "weight": 1
+    }
+  ],
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "medium",
+    "tags": ["proxmox", "lxc", "provisioning"],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-24T00:00:00Z"
+  }
+}

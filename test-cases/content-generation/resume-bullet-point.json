@@ -1,0 +1,73 @@
+{
+  "id": "resume-bullet-point",
+  "category": "content-generation",
+  "prompt": "Write a resume bullet point for: built a personal AI benchmarking system that tests multiple LLM models across 6 categories of real-world tasks, using TypeScript/Bun, LiteLLM proxy for model routing, and cross-vendor judge scoring to avoid bias. The system caught performance regressions when Claude 3.5 Sonnet was updated. Format: action verb, specific achievement, quantifiable impact. Technical audience.",
+  "scoringMethod": "judge",
+  "goldenAnswer": "Built personal AI benchmark suite in TypeScript that evaluates 15+ models across 6 task categories (code review, content generation, infrastructure debugging) with cross-vendor judge scoring, successfully detecting a 12% performance regression in Claude 3.5 Sonnet's code review accuracy after model update",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor",
+    "criteria": [
+      {
+        "name": "tone_match",
+        "weight": 0.4,
+        "description": "Matches user's authentic voice and style.",
+        "scoringLevels": {
+          "1": "Generic corporate tone, clearly AI-generated feel",
+          "3": "Somewhat natural but misses the technical-but-accessible voice",
+          "5": "Reasonable tone but occasionally slips into marketing speak or over-formality",
+          "7": "Matches the requested voice well; reads as authentic",
+          "10": "Indistinguishable from the golden answer's voice; perfectly calibrated tone"
+        }
+      },
+      {
+        "name": "technical_accuracy",
+        "weight": 0.3,
+        "description": "Technically correct, no oversimplification.",
+        "scoringLevels": {
+          "1": "Contains factual errors or fundamentally misunderstands the technology",
+          "3": "Technically vague; no real depth or insight",
+          "5": "Technically correct but surface-level; no novel insight",
+          "7": "Accurate with specific technical details that demonstrate understanding",
+          "10": "Deep technical accuracy with specific, correct details matching the golden answer's depth"
+        }
+      },
+      {
+        "name": "engagement",
+        "weight": 0.2,
+        "description": "Compelling hook, clear structure, actionable takeaway.",
+        "scoringLevels": {
+          "1": "No hook, buried lede, reads like documentation",
+          "3": "Weak opening; structure exists but no compelling reason to keep reading",
+          "5": "Decent structure with a clear point, but unremarkable",
+          "7": "Strong hook, clear structure, ends with actionable takeaway or discussion prompt",
+          "10": "Immediately compelling; reader would stop scrolling; clear call to action"
+        }
+      },
+      {
+        "name": "brevity",
+        "weight": 0.1,
+        "description": "Concise, no filler, appropriate length.",
+        "scoringLevels": {
+          "1": "Wall of text with excessive filler, repetition, or padding",
+          "3": "Noticeably verbose; could be cut by 40%+ without losing substance",
+          "5": "Appropriate length but has some filler sentences",
+          "7": "Concise; every sentence earns its place",
+          "10": "Maximally dense; cannot remove a sentence without losing meaning"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "easy",
+    "tags": [
+      "resume",
+      "achievement",
+      "quantifiable",
+      "ai"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

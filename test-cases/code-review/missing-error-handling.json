@@ -1,0 +1,85 @@
+{
+  "id": "missing-error-handling",
+  "category": "code-review",
+  "prompt": "Review this TypeScript code for issues:\n\n```typescript\nimport { readFileSync } from 'fs';\n\ninterface Config {\n  litellmUrl: string;\n  models: string[];\n  timeout: number;\n}\n\nexport function loadConfig(path: string): Config {\n  const raw = readFileSync(path, 'utf-8');\n  const parsed = JSON.parse(raw);\n  return {\n    litellmUrl: parsed.litellm_url,\n    models: parsed.models,\n    timeout: parsed.timeout,\n  };\n}\n\nexport async function fetchModels(config: Config): Promise<string[]> {\n  const response = await fetch(`${config.litellmUrl}/models`);\n  const data = await response.json();\n  return data.data.map((m: any) => m.id);\n}\n\nexport async function runBenchmark(configPath: string) {\n  const config = loadConfig(configPath);\n  const models = await fetchModels(config);\n  console.log(`Running benchmark with ${models.length} models`);\n  // ... benchmark logic\n}\n```",
+  "scoringMethod": "judge",
+  "goldenAnswer": "## Issues Found\n\n1. [High] No error handling for file read (line 11)\n   - Why: readFileSync throws ENOENT if file doesn't exist, EACCES on permission issues. Unhandled exception crashes the process with an unhelpful stack trace.\n   - Fix: Wrap in try/catch with descriptive error: `try { readFileSync(path) } catch (e) { throw new Error(`Config file not found: ${path}`) }`\n\n2. [High] No JSON parse error handling (line 12)\n   - Why: Malformed JSON throws SyntaxError with no context about which file failed.\n   - Fix: Wrap JSON.parse in try/catch: `try { JSON.parse(raw) } catch { throw new Error(`Invalid JSON in config: ${path}`) }`\n\n3. [High] No validation of parsed config shape (lines 13-17)\n   - Why: If litellm_url, models, or timeout are missing/wrong type, the function returns an invalid Config silently. Downstream failures will be confusing.\n   - Fix: Validate with Zod schema or manual checks before returning.\n\n4. [Medium] No HTTP error handling for fetch (line 22)\n   - Why: Network errors, 4xx/5xx responses are not caught. response.ok is not checked.\n   - Fix: Check `if (!response.ok) throw new Error(`LiteLLM API error: ${response.status}`)` before parsing.\n\n5. [Medium] Unsafe property chain data.data.map (line 24)\n   - Why: If API response shape changes or returns error JSON, data.data is undefined, causing TypeError.\n   - Fix: Validate response shape: `if (!data?.data?.length) throw new Error('Unexpected API response')`\n\n## Summary\nSystematic lack of error handling throughout. File I/O, JSON parsing, HTTP requests, and response parsing all assume happy path. Every external interaction needs defensive error handling with descriptive messages.",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor (Claude judges Gemini, Gemini judges Claude)",
+    "criteria": [
+      {
+        "name": "bug_detection",
+        "weight": 0.35,
+        "description": "Correctly identifies real bugs/issues. False positives reduce score.",
+        "scoringLevels": {
+          "1": "Misses all real bugs or identifies only trivially obvious issues",
+          "3": "Finds some bugs but misses the most critical one; includes false positives",
+          "5": "Identifies the primary bug but misses secondary issues or lacks precision",
+          "7": "Catches all significant bugs with accurate descriptions; minor omissions only",
+          "10": "Identifies every bug including subtle ones; zero false positives; precise root cause analysis"
+        }
+      },
+      {
+        "name": "actionability",
+        "weight": 0.3,
+        "description": "Specific, includes code examples, explains why issues matter.",
+        "scoringLevels": {
+          "1": "Vague observations with no fix suggestions",
+          "3": "Identifies issues but fixes are hand-wavy or incomplete",
+          "5": "Provides fix direction but lacks concrete code examples",
+          "7": "Includes specific code fixes for most issues with clear explanations",
+          "10": "Every issue has a concrete, copy-pasteable fix with explanation of why it works"
+        }
+      },
+      {
+        "name": "false_positive_rate",
+        "weight": 0.2,
+        "description": "Avoids flagging non-issues.",
+        "scoringLevels": {
+          "1": "Majority of flagged issues are non-issues or style preferences",
+          "3": "Several false positives mixed with real issues",
+          "5": "One or two false positives but mostly accurate",
+          "7": "No false positives; every flagged item is a genuine concern",
+          "10": "Zero false positives AND explicitly acknowledges clean patterns as intentional"
+        }
+      },
+      {
+        "name": "severity_triage",
+        "weight": 0.1,
+        "description": "Correctly prioritizes critical vs minor issues.",
+        "scoringLevels": {
+          "1": "No severity classification or completely wrong priorities",
+          "3": "Severity labels exist but critical bugs rated as low priority",
+          "5": "Mostly correct severity ordering with one or two swaps",
+          "7": "Accurate severity classification for all issues",
+          "10": "Perfect severity triage with clear justification for each level"
+        }
+      },
+      {
+        "name": "conciseness",
+        "weight": 0.05,
+        "description": "Response is appropriately concise. No unnecessary repetition, filler, or over-explanation of obvious points.",
+        "scoringLevels": {
+          "1": "Extremely verbose; repeats the same point multiple ways; heavy filler and padding",
+          "3": "Noticeably wordy; could be cut by 30%+ without losing substance",
+          "5": "Reasonable length but includes some unnecessary elaboration",
+          "7": "Concise and focused; every paragraph contributes meaningful analysis",
+          "10": "Maximally efficient; zero filler; dense with actionable insight"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "easy",
+    "tags": [
+      "error-handling",
+      "config",
+      "fetch",
+      "validation"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "networking-dns-lookup",
+  "category": "infrastructure",
+  "prompt": "What command would you use to look up the A record for proxmox.local using the DNS server at 10.0.0.1?",
+  "scoringMethod": "checklist",
+  "goldenAnswer": "dig @10.0.0.1 proxmox.local A",
+  "checklistItems": [
+    {
+      "id": "dig-command",
+      "description": "Uses dig command",
+      "pattern": "\\bdig\\b",
+      "patternFlags": "i",
+      "weight": 1
+    },
+    {
+      "id": "dns-server",
+      "description": "Specifies DNS server @10.0.0.1",
+      "pattern": "@10\\.0\\.0\\.1",
+      "patternFlags": "",
+      "weight": 1
+    },
+    {
+      "id": "target-domain",
+      "description": "Queries proxmox.local",
+      "pattern": "proxmox\\.local",
+      "patternFlags": "i",
+      "weight": 1
+    },
+    {
+      "id": "record-type",
+      "description": "Requests A record type",
+      "pattern": "\\bA\\b",
+      "patternFlags": "",
+      "weight": 1
+    }
+  ],
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "easy",
+    "tags": ["networking", "dns", "cli"],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-24T00:00:00Z"
+  }
+}

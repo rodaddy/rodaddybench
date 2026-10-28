@@ -1,0 +1,30 @@
+{
+  "id": "proxmox-backup-schedule",
+  "category": "infrastructure",
+  "prompt": "In Proxmox VE, what is the configuration file path for scheduled backup jobs?",
+  "scoringMethod": "checklist",
+  "goldenAnswer": "/etc/pve/jobs.cfg",
+  "checklistItems": [
+    {
+      "id": "correct-directory",
+      "description": "References /etc/pve/ directory",
+      "pattern": "/etc/pve/",
+      "patternFlags": "",
+      "weight": 1
+    },
+    {
+      "id": "correct-filename",
+      "description": "References jobs.cfg filename",
+      "pattern": "jobs\\.cfg",
+      "patternFlags": "",
+      "weight": 1
+    }
+  ],
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "medium",
+    "tags": ["proxmox", "backup", "config"],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-24T00:00:00Z"
+  }
+}

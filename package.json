@@ -1,0 +1,22 @@
+{
+  "name": "rodaddybench",
+  "type": "module",
+  "private": true,
+  "license": "UNLICENSED",
+  "bin": {
+    "bench": "./src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "chalk": "5",
+    "cli-table3": "^0.6.5",
+    "openai": "^6.22.0",
+    "simple-ascii-chart": "^5.3.1",
+    "zod": "^4.3.6"
+  }
+}

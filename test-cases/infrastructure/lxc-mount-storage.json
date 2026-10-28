@@ -1,0 +1,58 @@
+{
+  "id": "lxc-mount-storage",
+  "category": "infrastructure",
+  "prompt": "Write the Proxmox command to add an SMB/CIFS share at //nas.local/backups as storage named 'nas-backups' with username 'proxmox'.",
+  "scoringMethod": "checklist",
+  "goldenAnswer": "pvesm add cifs nas-backups --server nas.local --share backups --username proxmox",
+  "checklistItems": [
+    {
+      "id": "pvesm-add",
+      "description": "Uses pvesm add command",
+      "pattern": "\\bpvesm\\s+add\\b",
+      "patternFlags": "i",
+      "weight": 1
+    },
+    {
+      "id": "storage-type",
+      "description": "Specifies cifs storage type",
+      "pattern": "\\bcifs\\b",
+      "patternFlags": "i",
+      "weight": 1
+    },
+    {
+      "id": "storage-name",
+      "description": "Names storage nas-backups",
+      "pattern": "\\bnas-backups\\b",
+      "patternFlags": "i",
+      "weight": 1
+    },
+    {
+      "id": "server-flag",
+      "description": "Specifies server nas.local",
+      "pattern": "--server\\s+nas\\.local",
+      "patternFlags": "i",
+      "weight": 1
+    },
+    {
+      "id": "share-flag",
+      "description": "Specifies share backups",
+      "pattern": "--share\\s+backups",
+      "patternFlags": "i",
+      "weight": 1
+    },
+    {
+      "id": "username-flag",
+      "description": "Specifies username proxmox",
+      "pattern": "--username\\s+proxmox",
+      "patternFlags": "i",
+      "weight": 1
+    }
+  ],
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "medium",
+    "tags": ["proxmox", "storage", "smb"],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-24T00:00:00Z"
+  }
+}

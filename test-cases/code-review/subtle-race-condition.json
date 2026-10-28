@@ -1,0 +1,86 @@
+{
+  "id": "subtle-race-condition",
+  "category": "code-review",
+  "prompt": "Review this TypeScript code for issues:\n\n```typescript\nimport { Database } from 'bun:sqlite';\n\nconst db = new Database('app.db');\n\ninterface Counter {\n  id: string;\n  value: number;\n}\n\nasync function incrementCounter(counterId: string): Promise<number> {\n  const row = db.query('SELECT value FROM counters WHERE id = ?').get(counterId) as Counter | null;\n  \n  if (!row) {\n    db.run('INSERT INTO counters (id, value) VALUES (?, 1)', counterId);\n    return 1;\n  }\n  \n  const newValue = row.value + 1;\n  db.run('UPDATE counters SET value = ? WHERE id = ?', newValue, counterId);\n  return newValue;\n}\n\n// Called from multiple concurrent HTTP handlers\nexport async function handleRequest(req: Request): Promise<Response> {\n  const counterId = new URL(req.url).searchParams.get('id') ?? 'default';\n  const value = await incrementCounter(counterId);\n  return new Response(JSON.stringify({ value }));\n}\n```",
+  "scoringMethod": "judge",
+  "goldenAnswer": "## Issues Found\n\n1. [Critical] Race condition in read-modify-write pattern (lines 12-19)\n   - Why: Multiple concurrent requests can read the same value before either writes, causing lost increments. Two requests reading value=5 would both write value=6 instead of one writing 6 and the other 7.\n   - Fix: Use a single atomic SQL statement: `UPDATE counters SET value = value + 1 WHERE id = ? RETURNING value` or wrap in a transaction with proper locking.\n\n2. [Medium] Missing INSERT race condition (lines 14-16)\n   - Why: Two concurrent requests for a non-existent counter could both attempt INSERT, causing a unique constraint violation or duplicate rows.\n   - Fix: Use `INSERT INTO counters (id, value) VALUES (?, 1) ON CONFLICT(id) DO UPDATE SET value = value + 1 RETURNING value` for atomic upsert.\n\n3. [Low] Async function with synchronous SQLite operations\n   - Why: bun:sqlite is synchronous but the function is marked async. Not a bug, but misleading -- callers might expect non-blocking behavior.\n   - Fix: Remove async keyword or document that SQLite operations block the event loop.\n\n## Summary\nCritical concurrency bug: the read-modify-write pattern is not atomic, causing lost updates under concurrent access. Use SQL-level atomicity (UPDATE...RETURNING or transactions) instead of application-level increment.",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor (Claude judges Gemini, Gemini judges Claude)",
+    "criteria": [
+      {
+        "name": "bug_detection",
+        "weight": 0.35,
+        "description": "Correctly identifies real bugs/issues. False positives reduce score.",
+        "scoringLevels": {
+          "1": "Misses all real bugs or identifies only trivially obvious issues",
+          "3": "Finds some bugs but misses the most critical one; includes false positives",
+          "5": "Identifies the primary bug but misses secondary issues or lacks precision",
+          "7": "Catches all significant bugs with accurate descriptions; minor omissions only",
+          "10": "Identifies every bug including subtle ones; zero false positives; precise root cause analysis"
+        }
+      },
+      {
+        "name": "actionability",
+        "weight": 0.3,
+        "description": "Specific, includes code examples, explains why issues matter.",
+        "scoringLevels": {
+          "1": "Vague observations with no fix suggestions",
+          "3": "Identifies issues but fixes are hand-wavy or incomplete",
+          "5": "Provides fix direction but lacks concrete code examples",
+          "7": "Includes specific code fixes for most issues with clear explanations",
+          "10": "Every issue has a concrete, copy-pasteable fix with explanation of why it works"
+        }
+      },
+      {
+        "name": "false_positive_rate",
+        "weight": 0.2,
+        "description": "Avoids flagging non-issues.",
+        "scoringLevels": {
+          "1": "Majority of flagged issues are non-issues or style preferences",
+          "3": "Several false positives mixed with real issues",
+          "5": "One or two false positives but mostly accurate",
+          "7": "No false positives; every flagged item is a genuine concern",
+          "10": "Zero false positives AND explicitly acknowledges clean patterns as intentional"
+        }
+      },
+      {
+        "name": "severity_triage",
+        "weight": 0.1,
+        "description": "Correctly prioritizes critical vs minor issues.",
+        "scoringLevels": {
+          "1": "No severity classification or completely wrong priorities",
+          "3": "Severity labels exist but critical bugs rated as low priority",
+          "5": "Mostly correct severity ordering with one or two swaps",
+          "7": "Accurate severity classification for all issues",
+          "10": "Perfect severity triage with clear justification for each level"
+        }
+      },
+      {
+        "name": "conciseness",
+        "weight": 0.05,
+        "description": "Response is appropriately concise. No unnecessary repetition, filler, or over-explanation of obvious points.",
+        "scoringLevels": {
+          "1": "Extremely verbose; repeats the same point multiple ways; heavy filler and padding",
+          "3": "Noticeably wordy; could be cut by 30%+ without losing substance",
+          "5": "Reasonable length but includes some unnecessary elaboration",
+          "7": "Concise and focused; every paragraph contributes meaningful analysis",
+          "10": "Maximally efficient; zero filler; dense with actionable insight"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "medium",
+    "tags": [
+      "race-condition",
+      "concurrency",
+      "sqlite",
+      "bun",
+      "read-modify-write"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

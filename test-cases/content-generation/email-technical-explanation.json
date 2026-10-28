@@ -1,0 +1,73 @@
+{
+  "id": "email-technical-explanation",
+  "category": "content-generation",
+  "prompt": "Write an email to a non-technical stakeholder explaining why AI model benchmarking matters for the business. Context: they're questioning why we're spending time building a custom benchmark instead of using existing ones. Key points: commercial benchmarks test generic tasks, we need to test our specific use cases (code review quality, infrastructure command accuracy), model updates can cause regressions that break production workflows. Tone: respectful, business-focused, but don't oversimplify the technical reasoning. Max 250 words.",
+  "scoringMethod": "judge",
+  "goldenAnswer": "Subject: Why custom AI benchmarking matters for our workflows\n\nThanks for raising this question -- it's a good one.\n\nCommercial benchmarks (MMLU, HumanEval, etc.) test generic capabilities: math problems, coding challenges, general knowledge. They're useful for comparing models broadly, but they don't tell us what we need to know: how well does this model review TypeScript code? Does it generate accurate Proxmox commands? Does its tone match our team's communication style?\n\nOur custom benchmark tests the actual tasks we delegate to AI daily:\n- Code review quality (does it catch the bug types we care about?)\n- Infrastructure debugging (does it know Proxmox/LXC patterns?)\n- Content generation (does output match our voice, or sound like generic marketing?)\n\nThis matters because model updates break things. When Claude 3.5 Sonnet was updated last month, its code review accuracy dropped 12% on our test cases -- a regression the commercial benchmarks didn't catch because they don't test our specific domain.\n\nWithout this visibility, we'd deploy the update, production workflows would quietly degrade, and we'd spend days debugging why code reviews suddenly got worse.\n\nThe benchmark pays for itself by preventing these failures and giving us confidence when evaluating new models. It's infrastructure for AI reliability, the same way we test software before deploying it.\n\nHappy to walk through specific examples if that would be helpful.\n\nRico",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor",
+    "criteria": [
+      {
+        "name": "tone_match",
+        "weight": 0.4,
+        "description": "Matches user's authentic voice and style.",
+        "scoringLevels": {
+          "1": "Generic corporate tone, clearly AI-generated feel",
+          "3": "Somewhat natural but misses the technical-but-accessible voice",
+          "5": "Reasonable tone but occasionally slips into marketing speak or over-formality",
+          "7": "Matches the requested voice well; reads as authentic",
+          "10": "Indistinguishable from the golden answer's voice; perfectly calibrated tone"
+        }
+      },
+      {
+        "name": "technical_accuracy",
+        "weight": 0.3,
+        "description": "Technically correct, no oversimplification.",
+        "scoringLevels": {
+          "1": "Contains factual errors or fundamentally misunderstands the technology",
+          "3": "Technically vague; no real depth or insight",
+          "5": "Technically correct but surface-level; no novel insight",
+          "7": "Accurate with specific technical details that demonstrate understanding",
+          "10": "Deep technical accuracy with specific, correct details matching the golden answer's depth"
+        }
+      },
+      {
+        "name": "engagement",
+        "weight": 0.2,
+        "description": "Compelling hook, clear structure, actionable takeaway.",
+        "scoringLevels": {
+          "1": "No hook, buried lede, reads like documentation",
+          "3": "Weak opening; structure exists but no compelling reason to keep reading",
+          "5": "Decent structure with a clear point, but unremarkable",
+          "7": "Strong hook, clear structure, ends with actionable takeaway or discussion prompt",
+          "10": "Immediately compelling; reader would stop scrolling; clear call to action"
+        }
+      },
+      {
+        "name": "brevity",
+        "weight": 0.1,
+        "description": "Concise, no filler, appropriate length.",
+        "scoringLevels": {
+          "1": "Wall of text with excessive filler, repetition, or padding",
+          "3": "Noticeably verbose; could be cut by 40%+ without losing substance",
+          "5": "Appropriate length but has some filler sentences",
+          "7": "Concise; every sentence earns its place",
+          "10": "Maximally dense; cannot remove a sentence without losing meaning"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "medium",
+    "tags": [
+      "email",
+      "stakeholder",
+      "business",
+      "explanation"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

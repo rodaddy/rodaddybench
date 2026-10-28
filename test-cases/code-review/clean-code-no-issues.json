@@ -1,0 +1,86 @@
+{
+  "id": "clean-code-no-issues",
+  "category": "code-review",
+  "prompt": "Review this TypeScript code for issues:\n\n```typescript\nimport { z } from 'zod';\n\nconst EnvSchema = z.object({\n  LITELLM_URL: z.string().url(),\n  LITELLM_API_KEY: z.string().min(1),\n  BENCHMARK_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),\n  MAX_CONCURRENT: z.coerce.number().int().min(1).max(20).default(5),\n  VERBOSE: z.coerce.boolean().default(false),\n});\n\nexport type Env = z.infer<typeof EnvSchema>;\n\nlet cachedEnv: Env | null = null;\n\nexport function getEnv(): Env {\n  if (cachedEnv) return cachedEnv;\n\n  const result = EnvSchema.safeParse(process.env);\n\n  if (!result.success) {\n    const issues = result.error.issues\n      .map((i) => `  ${i.path.join('.')}: ${i.message}`)\n      .join('\\n');\n    throw new Error(`Invalid environment configuration:\\n${issues}`);\n  }\n\n  cachedEnv = result.data;\n  return cachedEnv;\n}\n\nexport function clearEnvCache(): void {\n  cachedEnv = null;\n}\n```",
+  "scoringMethod": "judge",
+  "goldenAnswer": "## Issues Found\n\nNo issues found.\n\n## Summary\nWell-structured environment configuration with proper validation:\n- Zod schema provides runtime type checking with sensible defaults\n- safeParse with descriptive error formatting gives clear feedback on misconfiguration\n- Caching avoids redundant parsing while clearEnvCache enables testing\n- Coerce transforms handle string-to-number/boolean conversion from process.env\n- Constraints (positive, min/max) prevent invalid values\n\nThis is clean, idiomatic TypeScript. No changes recommended.",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor (Claude judges Gemini, Gemini judges Claude)",
+    "criteria": [
+      {
+        "name": "bug_detection",
+        "weight": 0.35,
+        "description": "Correctly identifies real bugs/issues. False positives reduce score.",
+        "scoringLevels": {
+          "1": "Misses all real bugs or identifies only trivially obvious issues",
+          "3": "Finds some bugs but misses the most critical one; includes false positives",
+          "5": "Identifies the primary bug but misses secondary issues or lacks precision",
+          "7": "Catches all significant bugs with accurate descriptions; minor omissions only",
+          "10": "Identifies every bug including subtle ones; zero false positives; precise root cause analysis"
+        }
+      },
+      {
+        "name": "actionability",
+        "weight": 0.3,
+        "description": "Specific, includes code examples, explains why issues matter.",
+        "scoringLevels": {
+          "1": "Vague observations with no fix suggestions",
+          "3": "Identifies issues but fixes are hand-wavy or incomplete",
+          "5": "Provides fix direction but lacks concrete code examples",
+          "7": "Includes specific code fixes for most issues with clear explanations",
+          "10": "Every issue has a concrete, copy-pasteable fix with explanation of why it works"
+        }
+      },
+      {
+        "name": "false_positive_rate",
+        "weight": 0.2,
+        "description": "Avoids flagging non-issues.",
+        "scoringLevels": {
+          "1": "Majority of flagged issues are non-issues or style preferences",
+          "3": "Several false positives mixed with real issues",
+          "5": "One or two false positives but mostly accurate",
+          "7": "No false positives; every flagged item is a genuine concern",
+          "10": "Zero false positives AND explicitly acknowledges clean patterns as intentional"
+        }
+      },
+      {
+        "name": "severity_triage",
+        "weight": 0.1,
+        "description": "Correctly prioritizes critical vs minor issues.",
+        "scoringLevels": {
+          "1": "No severity classification or completely wrong priorities",
+          "3": "Severity labels exist but critical bugs rated as low priority",
+          "5": "Mostly correct severity ordering with one or two swaps",
+          "7": "Accurate severity classification for all issues",
+          "10": "Perfect severity triage with clear justification for each level"
+        }
+      },
+      {
+        "name": "conciseness",
+        "weight": 0.05,
+        "description": "Response is appropriately concise. No unnecessary repetition, filler, or over-explanation of obvious points.",
+        "scoringLevels": {
+          "1": "Extremely verbose; repeats the same point multiple ways; heavy filler and padding",
+          "3": "Noticeably wordy; could be cut by 30%+ without losing substance",
+          "5": "Reasonable length but includes some unnecessary elaboration",
+          "7": "Concise and focused; every paragraph contributes meaningful analysis",
+          "10": "Maximally efficient; zero filler; dense with actionable insight"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "medium",
+    "tags": [
+      "clean-code",
+      "zod",
+      "environment",
+      "validation",
+      "false-positive-test"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

@@ -1,0 +1,49 @@
+# dependencies (bun install)
+node_modules
+
+# output
+out
+dist
+*.tgz
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# IntelliJ based IDEs
+.idea
+
+# Finder (MacOS) folder config
+.DS_Store
+
+# Benchmark run results
+results/
+
+# SQLite database
+data/
+
+
+# qmd project-local search index: the database is rebuildable
+# and never committed; the allowlist config is tracked.
+
+# leftover commit-message scratch from an interrupted commit
+.git-commit-msg.tmp
+# qmd is retired here (dev#510); the allowlist is ~/.config/qmd/development.yml
+.qmd/

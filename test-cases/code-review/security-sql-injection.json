@@ -1,0 +1,86 @@
+{
+  "id": "security-sql-injection",
+  "category": "code-review",
+  "prompt": "Review this TypeScript code for issues:\n\n```typescript\nimport { Database } from 'bun:sqlite';\n\nconst db = new Database('inventory.db');\n\ninterface Container {\n  id: number;\n  name: string;\n  status: string;\n  node: string;\n}\n\nexport function searchContainers(query: string, node?: string): Container[] {\n  let sql = `SELECT id, name, status, node FROM containers WHERE name LIKE '%${query}%'`;\n  \n  if (node) {\n    sql += ` AND node = '${node}'`;\n  }\n  \n  return db.query(sql).all() as Container[];\n}\n\nexport function deleteContainer(containerId: string): void {\n  db.run(`DELETE FROM containers WHERE id = ${containerId}`);\n}\n\nexport function updateStatus(name: string, status: string): void {\n  db.run(`UPDATE containers SET status = '${status}' WHERE name = '${name}'`);\n}\n\n// API handler\nexport function handleSearch(req: Request): Response {\n  const url = new URL(req.url);\n  const query = url.searchParams.get('q') ?? '';\n  const node = url.searchParams.get('node') ?? undefined;\n  const results = searchContainers(query, node);\n  return Response.json(results);\n}\n```",
+  "scoringMethod": "judge",
+  "goldenAnswer": "## Issues Found\n\n1. [Critical] SQL injection in searchContainers via string interpolation (line 14)\n   - Why: User input `query` is directly interpolated into SQL. An attacker can inject `'; DROP TABLE containers; --` to destroy data, or `' UNION SELECT * FROM users --` to exfiltrate data.\n   - Fix: Use parameterized queries: `db.query('SELECT id, name, status, node FROM containers WHERE name LIKE ?').all(`%${query}%`)`\n\n2. [Critical] SQL injection in searchContainers via node parameter (line 17)\n   - Why: Same string interpolation vulnerability with the node parameter.\n   - Fix: Use parameterized query: `sql += ' AND node = ?' with node as parameter`\n\n3. [Critical] SQL injection in deleteContainer (line 23)\n   - Why: containerId is interpolated directly. Input like `1; DROP TABLE containers` executes arbitrary SQL.\n   - Fix: `db.run('DELETE FROM containers WHERE id = ?', containerId)`\n\n4. [Critical] SQL injection in updateStatus (line 27)\n   - Why: Both name and status are interpolated. Either can be exploited for injection.\n   - Fix: `db.run('UPDATE containers SET status = ? WHERE name = ?', status, name)`\n\n5. [Medium] No input sanitization at API boundary (lines 33-35)\n   - Why: User input flows directly from URL params to SQL queries with zero validation or sanitization.\n   - Fix: Validate and sanitize inputs at the handler level. At minimum, validate containerId is numeric, status is from allowed values.\n\n6. [Low] No authorization check on delete operation\n   - Why: Anyone who can reach the endpoint can delete containers. Destructive operations need auth.\n   - Fix: Add authentication middleware and authorization check before delete.\n\n## Summary\nEvery database operation uses string interpolation instead of parameterized queries, creating critical SQL injection vulnerabilities throughout. This is a textbook example of CWE-89. All SQL operations must use parameterized queries (`?` placeholders with separate arguments).",
+  "rubric": {
+    "method": "judge",
+    "judge": "Cross-vendor (Claude judges Gemini, Gemini judges Claude)",
+    "criteria": [
+      {
+        "name": "bug_detection",
+        "weight": 0.35,
+        "description": "Correctly identifies real bugs/issues. False positives reduce score.",
+        "scoringLevels": {
+          "1": "Misses all real bugs or identifies only trivially obvious issues",
+          "3": "Finds some bugs but misses the most critical one; includes false positives",
+          "5": "Identifies the primary bug but misses secondary issues or lacks precision",
+          "7": "Catches all significant bugs with accurate descriptions; minor omissions only",
+          "10": "Identifies every bug including subtle ones; zero false positives; precise root cause analysis"
+        }
+      },
+      {
+        "name": "actionability",
+        "weight": 0.3,
+        "description": "Specific, includes code examples, explains why issues matter.",
+        "scoringLevels": {
+          "1": "Vague observations with no fix suggestions",
+          "3": "Identifies issues but fixes are hand-wavy or incomplete",
+          "5": "Provides fix direction but lacks concrete code examples",
+          "7": "Includes specific code fixes for most issues with clear explanations",
+          "10": "Every issue has a concrete, copy-pasteable fix with explanation of why it works"
+        }
+      },
+      {
+        "name": "false_positive_rate",
+        "weight": 0.2,
+        "description": "Avoids flagging non-issues.",
+        "scoringLevels": {
+          "1": "Majority of flagged issues are non-issues or style preferences",
+          "3": "Several false positives mixed with real issues",
+          "5": "One or two false positives but mostly accurate",
+          "7": "No false positives; every flagged item is a genuine concern",
+          "10": "Zero false positives AND explicitly acknowledges clean patterns as intentional"
+        }
+      },
+      {
+        "name": "severity_triage",
+        "weight": 0.1,
+        "description": "Correctly prioritizes critical vs minor issues.",
+        "scoringLevels": {
+          "1": "No severity classification or completely wrong priorities",
+          "3": "Severity labels exist but critical bugs rated as low priority",
+          "5": "Mostly correct severity ordering with one or two swaps",
+          "7": "Accurate severity classification for all issues",
+          "10": "Perfect severity triage with clear justification for each level"
+        }
+      },
+      {
+        "name": "conciseness",
+        "weight": 0.05,
+        "description": "Response is appropriately concise. No unnecessary repetition, filler, or over-explanation of obvious points.",
+        "scoringLevels": {
+          "1": "Extremely verbose; repeats the same point multiple ways; heavy filler and padding",
+          "3": "Noticeably wordy; could be cut by 30%+ without losing substance",
+          "5": "Reasonable length but includes some unnecessary elaboration",
+          "7": "Concise and focused; every paragraph contributes meaningful analysis",
+          "10": "Maximally efficient; zero filler; dense with actionable insight"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source": "crafted",
+    "difficulty": "hard",
+    "tags": [
+      "security",
+      "sql-injection",
+      "sqlite",
+      "bun",
+      "cwe-89"
+    ],
+    "created": "2026-02-23T00:00:00Z",
+    "lastModified": "2026-02-23T00:00:00Z"
+  }
+}

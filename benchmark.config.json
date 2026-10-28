@@ -1,0 +1,11 @@
+{
+  "excludeModels": [
+    "quality",
+    "main",
+    "fast",
+    "image",
+    "embeddings",
+    "fallback",
+    "text-embedding-004"
+  ]
+}
