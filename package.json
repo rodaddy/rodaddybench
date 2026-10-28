@@ -2,7 +2,7 @@
   "name": "rodaddybench",
   "type": "module",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE",
   "bin": {
     "bench": "./src/cli.ts"
   },
