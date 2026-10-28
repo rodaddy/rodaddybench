@@ -36,8 +36,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Benchmark run results
 results/
 
-# SQLite database
-data/
+# SQLite database (root only; a bare data/ also hid dashboard/src/components/data/)
+/data/
 
 
 # qmd project-local search index: the database is rebuildable

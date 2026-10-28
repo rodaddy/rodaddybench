@@ -81,7 +81,10 @@ LITELLM_BASE_URL=http://<your-host>:4000/v1 LITELLM_API_KEY=... bun run src/cli.
 
 A live run needs your own LiteLLM proxy. `tests/integration/pipeline.test.ts`
 calls the proxy and needs the same variables. The dashboard is in
-`dashboard/` (`bun install && bun run dev`, port 3333).
+`dashboard/` (`bun install && bun run dev`, port 3333). It reads
+`data/rodaddybench.db`, which a run or `bench migrate` creates, and its
+`better-sqlite3` needs a Node with a prebuilt binary (Node 24 LTS) on
+`PATH` during `bun install`.
 
 Free for personal and non-commercial use with credit; commercial use needs
 a licence. See [LICENSE](LICENSE) (PolyForm Noncommercial 1.0.0).
